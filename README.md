@@ -37,5 +37,6 @@ Run only the UI test:
 pytest -m ui
 ```
 
+## Documentation
 The suite includes tests for starting parking sessions and preventing duplicate
 parking attempts. See `TEST_PLAN.md` for a detailed description of coverage.
