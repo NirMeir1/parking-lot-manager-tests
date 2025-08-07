@@ -1,5 +1,3 @@
-"""Project-wide pytest fixtures."""
-
 from __future__ import annotations
 
 import os
@@ -42,7 +40,7 @@ def session(config):
     s = requests.Session()
     try:
         api.login(s, config["base_url"], config["username"], config["password"])
-    except Exception as exc:  # noqa: BLE001  (pytest will show str(exc))
+    except Exception as exc:  
         pytest.fail(f"Auth failed in session fixture: {exc}")
     return s
 

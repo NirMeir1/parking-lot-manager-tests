@@ -1,4 +1,3 @@
-# generator.py
 import random
 import string
 
