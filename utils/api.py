@@ -19,16 +19,9 @@ def login(session: requests.Session, base_url: str, username: str, password: str
     return response
 
 
-def get_csrf_token(session: requests.Session, url: str) -> Optional[str]:
-    """Fetch a page and extract the CSRF token from it.
-
-    Some endpoints require a trailing slash; if the initial request returns
-    a *405 Method Not Allowed* error, the call is retried with a trailing
-    slash appended.
-    """
-    response = session.get(url)
-    if response.status_code == 405 and not url.endswith("/"):
-        response = session.get(f"{url}/")
+def get_csrf_token(session: requests.Session, base_url: str, path: str = "/") -> Optional[str]:
+    """Fetch the CSRF token from a GET-accessible page."""
+    response = session.get(f"{base_url}{path}")
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
     token = soup.find("input", {"name": "csrf_token"})
@@ -44,7 +37,7 @@ def start_parking(
 ) -> requests.Response:
     """Start parking for a given vehicle plate."""
     start_url = f"{base_url}/start"
-    token = get_csrf_token(session, start_url)
+    token = get_csrf_token(session, base_url)
     files = {"image": ("dummy.jpg", b"dummy", "image/jpeg")}
     data = {
         "csrf_token": token,
@@ -54,13 +47,7 @@ def start_parking(
         "submit": "Start",
     }
 
-    response = session.post(start_url, data=data, files=files, allow_redirects=True)
-    if response.status_code == 405 and not start_url.endswith("/"):
-        start_url = f"{start_url}/"
-        token = get_csrf_token(session, start_url)
-        data["csrf_token"] = token
-        response = session.post(start_url, data=data, files=files, allow_redirects=True)
-    return response
+    return session.post(start_url, data=data, files=files, allow_redirects=True)
 
 
 def find_parking_id(html: str, plate: str) -> Optional[str]:
@@ -77,7 +64,6 @@ def find_parking_id(html: str, plate: str) -> Optional[str]:
 def end_parking(session: requests.Session, base_url: str, parking_id: str) -> requests.Response:
     """End parking session by ID."""
     url = f"{base_url}/end/{parking_id}"
-    token = get_csrf_token(session, url)
+    token = get_csrf_token(session, base_url)
     data = {"csrf_token": token, "submit": "End"}
-    response = session.post(url, data=data, allow_redirects=True)
-    return response
+    return session.post(url, data=data, allow_redirects=True)
