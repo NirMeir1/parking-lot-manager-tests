@@ -14,8 +14,8 @@ covers core parking workflows.
    BASE_URL=http://localhost:5000
    USERNAME=admin
    PASSWORD=password
-   ALT_USERNAME=user
-   ALT_PASSWORD=password
+   ALT_USERNAME=blabla
+   ALT_PASSWORD=12345
    ```
 
 ## Running Tests

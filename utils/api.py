@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Optional
 
 import requests
@@ -21,8 +20,15 @@ def login(session: requests.Session, base_url: str, username: str, password: str
 
 
 def get_csrf_token(session: requests.Session, url: str) -> Optional[str]:
-    """Fetch a page and extract the CSRF token from it."""
+    """Fetch a page and extract the CSRF token from it.
+
+    Some endpoints require a trailing slash; if the initial request returns
+    a *405 Method Not Allowed* error, the call is retried with a trailing
+    slash appended.
+    """
     response = session.get(url)
+    if response.status_code == 405 and not url.endswith("/"):
+        response = session.get(f"{url}/")
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
     token = soup.find("input", {"name": "csrf_token"})
@@ -37,7 +43,8 @@ def start_parking(
     vehicle_type_id: int = 1,
 ) -> requests.Response:
     """Start parking for a given vehicle plate."""
-    token = get_csrf_token(session, f"{base_url}/start")
+    start_url = f"{base_url}/start"
+    token = get_csrf_token(session, start_url)
     files = {"image": ("dummy.jpg", b"dummy", "image/jpeg")}
     data = {
         "csrf_token": token,
@@ -46,12 +53,13 @@ def start_parking(
         "slot": slot,
         "submit": "Start",
     }
-    response = session.post(
-        f"{base_url}/start",
-        data=data,
-        files=files,
-        allow_redirects=True,
-    )
+
+    response = session.post(start_url, data=data, files=files, allow_redirects=True)
+    if response.status_code == 405 and not start_url.endswith("/"):
+        start_url = f"{start_url}/"
+        token = get_csrf_token(session, start_url)
+        data["csrf_token"] = token
+        response = session.post(start_url, data=data, files=files, allow_redirects=True)
     return response
 
 
