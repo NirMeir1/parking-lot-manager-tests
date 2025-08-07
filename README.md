@@ -12,11 +12,13 @@ covers core parking workflows.
 2. Configure environment variables in `.env` (sample values are provided):
    ```env
    BASE_URL=http://localhost:5000
-   USERNAME=*
-   PASSWORD=*
-   ALT_USERNAME=*
-   ALT_PASSWORD=*
+   USERNAME=will_be_provided_securely
+   PASSWORD=will_be_provided_securely
+   ALT_USERNAME=will_be_provided_securely
+   ALT_PASSWORD=will_be_provided_securely
    ```
+
+   Note: The credentials will be provided securely by the test author (via email or other private means). Please do not attempt to run the tests without updating the .env file.
 
 ## Running Tests
 Ensure the Parking Lot Manager application is running locally and then execute:
