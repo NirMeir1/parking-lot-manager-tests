@@ -61,6 +61,12 @@ def find_parking_id(html: str, plate: str) -> Optional[str]:
     return None
 
 
+def count_plate_occurrences(html: str, plate: str) -> int:
+    """Count how many times a plate appears in the active parking table."""
+    soup = BeautifulSoup(html, "html.parser")
+    return sum(1 for row in soup.select("tr") if plate in row.get_text())
+
+
 def end_parking(session: requests.Session, base_url: str, parking_id: str) -> requests.Response:
     """End parking session by ID."""
     url = f"{base_url}/end/{parking_id}"
