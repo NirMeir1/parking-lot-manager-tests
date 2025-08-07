@@ -21,7 +21,6 @@ def login(
     Perform a CSRF-protected login *and* fail loudly when authentication
     does not succeed (wrong creds / missing token, …).
     """
-    # prefer the dedicated login page, fall back to “/”
     token = (
         get_csrf_token(session, base_url, "/login")
         or get_csrf_token(session, base_url, "/")

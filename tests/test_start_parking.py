@@ -12,7 +12,6 @@ def test_tc1_start_parking_valid(session, base_url, unique_plate):
     assert resp.status_code == 200
 
     dashboard = session.get(f"{base_url}/")
-    # TODO: Switch to /api/parkings endpoint once available
     assert count_plate_occurrences(dashboard.text, unique_plate) == 1
 
 
