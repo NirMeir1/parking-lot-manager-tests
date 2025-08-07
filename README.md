@@ -12,10 +12,10 @@ covers core parking workflows.
 2. Configure environment variables in `.env` (sample values are provided):
    ```env
    BASE_URL=http://localhost:5000
-   USERNAME=admin
-   PASSWORD=password
-   ALT_USERNAME=blabla
-   ALT_PASSWORD=12345
+   USERNAME=*
+   PASSWORD=*
+   ALT_USERNAME=*
+   ALT_PASSWORD=*
    ```
 
 ## Running Tests
