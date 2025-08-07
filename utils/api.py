@@ -89,32 +89,9 @@ def start_parking(
         "slot": slot,
         "submit": "Start",
     }
-    return session.post(f"{base_url}/start", data=data, files=files, allow_redirects=True)
-
-
-def end_parking(
-    session: requests.Session,
-    base_url: str,
-    parking_id: str,
-) -> requests.Response:
-    """Close an active parking session by *parking_id*."""
-    token = get_csrf_token(session, base_url, "/")
-    data = {"csrf_token": token, "submit": "End"}
-    return session.post(f"{base_url}/end/{parking_id}", data=data, allow_redirects=True)
-
-
-# ───────────────────────────────  HTML UTILS  ──────────────────────────
-
-
-def find_parking_id(html: str, plate: str) -> Optional[str]:
-    """Return the /end/<id> for *plate* from dashboard HTML."""
-    soup = BeautifulSoup(html, "html.parser")
-    for row in soup.select("tr"):
-        if plate in row.get_text():
-            link = row.find("a", href=lambda h: h and h.startswith("/end/"))
-            if link:
-                return link["href"].rstrip("/").split("/")[-1]
-    return None
+    return session.post(
+        f"{base_url}/start", data=data, files=files, allow_redirects=True
+    )
 
 
 def count_plate_occurrences(html: str, plate: str) -> int:

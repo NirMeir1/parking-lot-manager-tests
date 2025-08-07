@@ -1,8 +1,8 @@
 # parking-lot-manager-tests
 
-Automated API test suite for the **Pango Pay & Go – Parking Lot Manager**.
-The suite is built with `pytest`, `requests`, and `python-dotenv` and
-covers core parking workflows.
+Automated test suite for the **Pango Pay & Go – Parking Lot Manager**.
+API tests use `pytest`, `requests`, and `python-dotenv` while a single UI
+scenario is covered with `pytest-playwright`.
 
 ## Setup
 1. Install dependencies:
@@ -21,10 +21,21 @@ covers core parking workflows.
    Note: The credentials will be provided securely by the test author (via email or other private means). Please do not attempt to run the tests without updating the .env file.
 
 ## Running Tests
-Ensure the Parking Lot Manager application is running locally and then execute:
+Ensure the Parking Lot Manager application is running locally. Install the
+Playwright browsers once:
+```bash
+playwright install
+```
+
+Run the full test suite:
 ```bash
 pytest
 ```
 
-The suite includes tests for starting and ending parking sessions, as well as
-checks for preventing duplicate parking attempts.
+Run only the UI test:
+```bash
+pytest -m ui
+```
+
+The suite includes tests for starting parking sessions and preventing duplicate
+parking attempts. See `TEST_PLAN.md` for a detailed description of coverage.
