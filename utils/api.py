@@ -1,4 +1,4 @@
-"""Utility functions for interacting with the Parking Lot Manager API."""
+"""Helpers for talking to the Parking-Lot-Manager HTTP interface."""
 
 from __future__ import annotations
 
@@ -8,24 +8,69 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def login(session: requests.Session, base_url: str, username: str, password: str) -> requests.Response:
-    """Log in to the application using provided credentials."""
-    response = session.post(
+# ──────────────────────────────  AUTH  ──────────────────────────────────
+
+
+def login(
+    session: requests.Session,
+    base_url: str,
+    username: str,
+    password: str,
+) -> requests.Response:
+    """
+    Perform a CSRF-protected login *and* fail loudly when authentication
+    does not succeed (wrong creds / missing token, …).
+    """
+    # prefer the dedicated login page, fall back to “/”
+    token = (
+        get_csrf_token(session, base_url, "/login")
+        or get_csrf_token(session, base_url, "/")
+    )
+    if token is None:
+        raise RuntimeError("Could not extract CSRF token from login page")
+
+    resp = session.post(
         f"{base_url}/login",
-        data={"username": username, "password": password},
+        data={
+            "username": username,
+            "password": password,
+            "csrf_token": token,
+        },
         allow_redirects=True,
     )
-    response.raise_for_status()
-    return response
+
+    # ── sanity-checks ────────────────────────────────────────────────
+    if resp.url.endswith("/login"):
+        raise RuntimeError("Login failed – server kept us on /login")
+    if not session.cookies.get_dict():
+        raise RuntimeError("Login failed – no session cookie set")
+    # ────────────────────────────────────────────────────────────────
+
+    return resp
 
 
-def get_csrf_token(session: requests.Session, base_url: str, path: str = "/") -> Optional[str]:
-    """Fetch the CSRF token from a GET-accessible page."""
-    response = session.get(f"{base_url}{path}")
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
-    token = soup.find("input", {"name": "csrf_token"})
-    return token["value"] if token else None
+def get_csrf_token(
+    session: requests.Session,
+    base_url: str,
+    path: str = "/",
+) -> Optional[str]:
+    """
+    Return the CSRF token rendered in *path*.
+
+    Looks for an ``<input>`` whose **name OR id** equals ``csrf_token``.
+    """
+    resp = session.get(f"{base_url}{path}", allow_redirects=True)
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    token_input = (
+        soup.find("input", attrs={"name": "csrf_token"})
+        or soup.find("input", attrs={"id": "csrf_token"})
+    )
+    return token_input["value"] if token_input else None
+
+
+# ────────────────────────  PARKING ENDPOINTS  ──────────────────────────
 
 
 def start_parking(
@@ -35,9 +80,8 @@ def start_parking(
     slot: str = "A1",
     vehicle_type_id: int = 1,
 ) -> requests.Response:
-    """Start parking for a given vehicle plate."""
-    start_url = f"{base_url}/start"
-    token = get_csrf_token(session, base_url)
+    """Open a new parking session for *plate*."""
+    token = get_csrf_token(session, base_url, "/")
     files = {"image": ("dummy.jpg", b"dummy", "image/jpeg")}
     data = {
         "csrf_token": token,
@@ -46,30 +90,35 @@ def start_parking(
         "slot": slot,
         "submit": "Start",
     }
+    return session.post(f"{base_url}/start", data=data, files=files, allow_redirects=True)
 
-    return session.post(start_url, data=data, files=files, allow_redirects=True)
+
+def end_parking(
+    session: requests.Session,
+    base_url: str,
+    parking_id: str,
+) -> requests.Response:
+    """Close an active parking session by *parking_id*."""
+    token = get_csrf_token(session, base_url, "/")
+    data = {"csrf_token": token, "submit": "End"}
+    return session.post(f"{base_url}/end/{parking_id}", data=data, allow_redirects=True)
+
+
+# ───────────────────────────────  HTML UTILS  ──────────────────────────
 
 
 def find_parking_id(html: str, plate: str) -> Optional[str]:
-    """Locate a parking session ID from the active list HTML for the given plate."""
+    """Return the /end/<id> for *plate* from dashboard HTML."""
     soup = BeautifulSoup(html, "html.parser")
     for row in soup.select("tr"):
         if plate in row.get_text():
-            link = row.find("a", href=lambda x: x and x.startswith("/end/"))
+            link = row.find("a", href=lambda h: h and h.startswith("/end/"))
             if link:
                 return link["href"].rstrip("/").split("/")[-1]
     return None
 
 
 def count_plate_occurrences(html: str, plate: str) -> int:
-    """Count how many times a plate appears in the active parking table."""
+    """Count how many times *plate* appears in the active-parking table."""
     soup = BeautifulSoup(html, "html.parser")
     return sum(1 for row in soup.select("tr") if plate in row.get_text())
-
-
-def end_parking(session: requests.Session, base_url: str, parking_id: str) -> requests.Response:
-    """End parking session by ID."""
-    url = f"{base_url}/end/{parking_id}"
-    token = get_csrf_token(session, base_url)
-    data = {"csrf_token": token, "submit": "End"}
-    return session.post(url, data=data, allow_redirects=True)
