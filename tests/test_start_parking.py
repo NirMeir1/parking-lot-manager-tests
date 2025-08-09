@@ -1,5 +1,8 @@
 """Tests related to *starting* parking sessions."""
 
+import pytest
+pytestmark = pytest.mark.api
+
 from utils.api import start_parking, count_plate_occurrences
 
 

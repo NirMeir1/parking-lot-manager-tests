@@ -4,6 +4,7 @@ from typing import Dict
 
 from playwright.sync_api import Page, expect
 import pytest
+pytestmark = pytest.mark.ui
 
 PLATE: str = "82743904"      # 8-digit plate (no letters, non-sequential)
 SLOT: str = "A1"             
@@ -37,10 +38,9 @@ def logout(page: Page) -> None:
 # --------------------------------------------------------------------------- #
 # Test case                                                                   #
 # --------------------------------------------------------------------------- #
-@pytest.mark.ui  
 def test_tc3_start_parking_duplicate_plate_different_user(
     page: Page,
-    config: Dict[str, str],          
+    config: Dict[str, str],
 ) -> None:
     """
     TC3 – Start Parking Duplicate Plate – Different User

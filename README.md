@@ -1,42 +1,43 @@
-# parking-lot-manager-tests
+# Parking Lot Manager Tests
 
-Automated test suite for the **Pango Pay & Go – Parking Lot Manager**.
-API tests use `pytest`, `requests`, and `python-dotenv` while a single UI
-scenario is covered with `pytest-playwright`.
+Automated tests for the Parking Lot Manager app (API + UI).
 
-## Setup
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Configure environment variables in `.env` (sample values are provided):
-   ```env
-   BASE_URL=http://localhost:5000
-   USERNAME=will_be_provided_securely
-   PASSWORD=will_be_provided_securely
-   ALT_USERNAME=will_be_provided_securely
-   ALT_PASSWORD=will_be_provided_securely
-   ```
+## Prerequisites
+- Python 3.10+
+- Install Playwright browsers:
+  ```bash
+  playwright install --with-deps
+  ```
 
-   Note: The credentials will be provided securely by the test author (via email or other private means). Please do not attempt to run the tests without updating the .env file.
+## Environment Variables
+Create a `.env` from the template:
+```bash
+cp .env.example .env
+```
+Update values if needed. **Do not commit `.env`.**
+
+## Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+This includes `pytest-xdist` for parallel execution.
 
 ## Running Tests
-Ensure the Parking Lot Manager application is running locally. Install the
-Playwright browsers once:
+**API tests (parallel):**
 ```bash
-playwright install
+pytest -m api -n auto -q
 ```
 
-Run the full test suite:
+**UI tests (serial):**
 ```bash
-pytest
+pytest -m ui -n 1 -q
 ```
 
-Run only the UI test:
+**All (API parallel, UI serial):**
 ```bash
-pytest -m ui
+pytest -m "api" -n auto -q && pytest -m "ui" -n 1 -q
 ```
 
-## Documentation
-The suite includes tests for starting parking sessions and preventing duplicate
-parking attempts. See `TEST_PLAN.md` for a detailed description of coverage.
+## Notes
+- Tests use namespaced data per worker to avoid collisions.
+- Sessions are function-scoped to prevent state leakage.

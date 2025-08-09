@@ -40,9 +40,11 @@ def session(config):
     s = requests.Session()
     try:
         api.login(s, config["base_url"], config["username"], config["password"])
-    except Exception as exc:  
+        yield s
+    except Exception as exc:
         pytest.fail(f"Auth failed in session fixture: {exc}")
-    return s
+    finally:
+        s.close()
 
 
 @pytest.fixture
@@ -59,15 +61,22 @@ def alt_session(config):
             config["alt_username"],
             config["alt_password"],
         )
+        yield s
     except Exception as exc:
         pytest.fail(f"Auth failed in alt_session fixture: {exc}")
-    return s
+    finally:
+        s.close()
 
 
 # ──────────────────────────────  GENERATORS  ───────────────────────────
 
 
+@pytest.fixture(scope="session")
+def worker_namespace(worker_id: str) -> str:
+    """Namespace for xdist workers; 'master' when not parallel."""
+    return worker_id if worker_id != "master" else "gw0"
+
 @pytest.fixture
-def unique_plate():
-    """Random 8-digit plate for each test."""
-    return random_plate()
+def unique_plate(worker_namespace: str):
+    """Random plate, namespaced per worker to avoid collisions."""
+    return f"{worker_namespace}-{random_plate()}"
